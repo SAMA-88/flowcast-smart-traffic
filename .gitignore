@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl.bak
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Dataform / Node
+node_modules/
+dataform/.df-credentials.json
+
+# Secrets and local env (never commit keys)
+.env
+.env.*
+*.key
+*-key.json
+credentials*.json
+service-account*.json
+
+# Local outputs
+scripts/out/
+*.log
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

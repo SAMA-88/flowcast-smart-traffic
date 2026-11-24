@@ -1,0 +1,100 @@
+# Road segments we monitor. One TomTom call per segment every 15 minutes.
+# 15 segments x 96 slots/day = 1,440 calls/day (TomTom free tier: 2,500/day).
+#
+# Probe points are STARTING coordinates from the blueprint (section E1) and must be
+# verified on Day 1 by DA1 with scripts/probe_segments.py: the road TomTom returns
+# must be the intended corridor and direction. Adjust lat/lon here if not.
+#
+# Adding a road = one new entry here + scripts/load_reference.py. Keep ids stable.
+
+segments:
+  - id: S01
+    name: Abbas El Akkad St
+    city: Cairo
+    area: Nasr City
+    lat: 30.0605
+    lon: 31.3372
+  - id: S02
+    name: Makram Ebeid St
+    city: Cairo
+    area: Nasr City
+    lat: 30.0570
+    lon: 31.3470
+  - id: S03
+    name: El Nasr Rd (Rabaa - Manassa)
+    city: Cairo
+    area: Nasr City
+    lat: 30.0650
+    lon: 31.3190
+  - id: S04
+    name: Mostafa El Nahas St
+    city: Cairo
+    area: Nasr City
+    lat: 30.0590
+    lon: 31.3530
+  - id: S05
+    name: South 90th Street
+    city: Cairo
+    area: New Cairo
+    lat: 30.0210
+    lon: 31.4700
+  - id: S06
+    name: North 90th Street
+    city: Cairo
+    area: New Cairo
+    lat: 30.0300
+    lon: 31.4720
+  - id: S07
+    name: Ring Road near New Cairo exit
+    city: Cairo
+    area: New Cairo
+    lat: 30.0300
+    lon: 31.4100
+  - id: S08
+    name: Corniche El Nile, Maadi
+    city: Cairo
+    area: Maadi
+    lat: 29.9690
+    lon: 31.2450
+  - id: S09
+    name: Road 9, Maadi
+    city: Cairo
+    area: Maadi
+    lat: 29.9600
+    lon: 31.2580
+  - id: S10
+    name: Autostrad Rd near Maadi
+    city: Cairo
+    area: Maadi
+    lat: 29.9750
+    lon: 31.2850
+  - id: S11
+    name: Corniche, Stanley
+    city: Alexandria
+    area: East
+    lat: 31.2350
+    lon: 29.9480
+  - id: S12
+    name: Gamal Abdel Nasser Rd (Abu Qir Rd)
+    city: Alexandria
+    area: East
+    lat: 31.2300
+    lon: 29.9600
+  - id: S13
+    name: Corniche near Raml Station
+    city: Alexandria
+    area: Central
+    lat: 31.2030
+    lon: 29.9010
+  - id: S14
+    name: Mahmoudiya Axis
+    city: Alexandria
+    area: Central
+    lat: 31.1950
+    lon: 29.9300
+  - id: S15
+    name: Moharam Bek / Desert Rd entrance
+    city: Alexandria
+    area: Central
+    lat: 31.1800
+    lon: 29.9100
