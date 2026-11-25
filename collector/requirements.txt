@@ -1,3 +1,5 @@
 requests==2.32.3
 PyYAML==6.0.2
-google-cloud-pubsub==2.27.1
+jsonschema==4.23.0
+azure-servicebus==7.13.0
+azure-identity==1.19.0

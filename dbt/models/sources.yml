@@ -1,0 +1,23 @@
+version: 2
+
+# Tables created by infra/sql/ (raw) and scripts/load_reference.py (ref).
+sources:
+  - name: raw
+    schema: raw
+    loaded_at_field: enqueued_time
+    freshness:
+      warn_after: {count: 20, period: minute}
+      error_after: {count: 45, period: minute}
+    tables:
+      - name: traffic_events
+        description: One row per segment per 15-minute slot. TomTom rows are deleted after 24 h.
+      - name: weather_events
+        description: One row per zone per 15-minute slot.
+
+  - name: ref
+    schema: ref
+    tables:
+      - name: dim_segment
+        description: config/segments.yml with a PostGIS geography point.
+      - name: dim_zone
+        description: config/zones.yml with a PostGIS geography point.

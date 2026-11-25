@@ -17,4 +17,20 @@ jobs:
       - run: ruff check .
       - run: pytest
 
-  # TODO(DE1, D4-D5): add terraform fmt/validate/plan and dataform compile jobs.
+  dbt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r dbt/requirements.txt
+      # parse needs no database; the env vars only have to exist
+      - run: dbt parse --project-dir dbt --profiles-dir dbt
+        env:
+          PG_HOST: localhost
+          PG_USER: ci
+          PG_PASSWORD: ci
+
+  # TODO(DE1, D4-D5): terraform fmt/validate/plan with azure/login (OIDC, no client secret),
+  # then on main: build images to ghcr.io and terraform apply.
