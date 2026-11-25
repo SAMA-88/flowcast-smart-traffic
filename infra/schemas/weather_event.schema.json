@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowcast/weather_event/v1",
+  "title": "Weather event",
+  "description": "One message per zone per 15-minute slot on the Service Bus queue weather-events. Loaded into raw.weather_events (infra/sql/001_raw_tables.sql).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "zone_id", "slot_ts", "source", "schema_version", "collected_at"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^Z\\d+_\\d{4}-\\d{2}-\\d{2}T\\d{2}:(00|15|30|45):00Z$", "description": "zone_id + '_' + slot_ts"},
+    "zone_id": {"type": "string", "description": "Id from config/zones.yml"},
+    "slot_ts": {"type": "string", "format": "date-time", "description": "15-minute slot, UTC, ISO 8601 with Z"},
+    "temp_c": {"type": ["number", "null"]},
+    "humidity": {"type": ["integer", "null"], "description": "%"},
+    "wind_ms": {"type": ["number", "null"], "description": "m/s"},
+    "rain_1h_mm": {"type": ["number", "null"], "description": "0 when OpenWeather reports no rain"},
+    "visibility_m": {"type": ["integer", "null"]},
+    "condition_code": {"type": ["integer", "null"], "description": "OpenWeather weather id"},
+    "source": {"const": "openweather"},
+    "schema_version": {"const": 1},
+    "collected_at": {"type": "string", "format": "date-time"}
+  }
+}

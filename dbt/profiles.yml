@@ -1,0 +1,27 @@
+# dbt profile. No secrets here: every value comes from an environment variable.
+# Locally: put them in .env (ignored by git). In Azure: the dbt job reads PG_PASSWORD
+# from Key Vault through its managed identity.
+flowcast:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('PG_HOST') }}"
+      port: 5432
+      user: "{{ env_var('PG_USER') }}"
+      password: "{{ env_var('PG_PASSWORD') }}"
+      dbname: "{{ env_var('PG_DATABASE', 'flowcast') }}"
+      # Each person builds into their own schema prefix, e.g. dev_ahmed_silver.
+      schema: "{{ env_var('DBT_SCHEMA', 'dev') }}"
+      sslmode: require
+      threads: 2
+    prod:
+      type: postgres
+      host: "{{ env_var('PG_HOST') }}"
+      port: 5432
+      user: "{{ env_var('PG_USER') }}"
+      password: "{{ env_var('PG_PASSWORD') }}"
+      dbname: "{{ env_var('PG_DATABASE', 'flowcast') }}"
+      schema: public
+      sslmode: require
+      threads: 2

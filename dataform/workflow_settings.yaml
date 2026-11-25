@@ -1,5 +1,0 @@
-defaultProject: your-project-id
-defaultLocation: europe-west1
-defaultDataset: silver
-defaultAssertionDataset: assertions
-dataformCoreVersion: 3.0.0

@@ -1,1 +1,1 @@
-"""Collector: polls TomTom and OpenWeather once per 15-minute slot and publishes events."""
+"""Collector: polls TomTom and OpenWeather every 15 minutes and sends events to Service Bus."""

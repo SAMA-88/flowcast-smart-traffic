@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowcast/traffic_event/v1",
+  "title": "Traffic event",
+  "description": "One message per segment per 15-minute slot on the Service Bus queue traffic-events. Data contract: the collector validates before sending, the loader validates before inserting into raw.traffic_events (infra/sql/001_raw_tables.sql). Invalid messages go to the dead-letter queue.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "segment_id", "slot_ts", "source", "schema_version", "collected_at"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^S\\d{2}_\\d{4}-\\d{2}-\\d{2}T\\d{2}:(00|15|30|45):00Z$", "description": "segment_id + '_' + slot_ts. Same slot always gives the same id (idempotent)."},
+    "segment_id": {"type": "string", "description": "Id from config/segments.yml"},
+    "slot_ts": {"type": "string", "format": "date-time", "description": "15-minute slot, UTC, ISO 8601 with Z"},
+    "current_speed": {"type": ["number", "null"], "description": "km/h. Raw TomTom value: kept 24 h only."},
+    "free_flow_speed": {"type": ["number", "null"], "description": "km/h. Raw TomTom value: kept 24 h only."},
+    "current_travel_time": {"type": ["integer", "null"], "description": "Seconds"},
+    "free_flow_travel_time": {"type": ["integer", "null"], "description": "Seconds"},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "road_closure": {"type": ["boolean", "null"]},
+    "frc": {"type": ["string", "null"], "description": "TomTom functional road class"},
+    "source": {"const": "tomtom"},
+    "schema_version": {"const": 1},
+    "collected_at": {"type": "string", "format": "date-time", "description": "When the collector received the response, UTC ISO 8601"}
+  }
+}

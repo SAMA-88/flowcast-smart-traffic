@@ -16,9 +16,12 @@ infra/.terraform.lock.hcl.bak
 !*.tfvars.example
 crash.log
 
-# Dataform / Node
+# dbt / Node
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
 node_modules/
-dataform/.df-credentials.json
 
 # Secrets and local env (never commit keys)
 .env

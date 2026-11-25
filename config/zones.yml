@@ -1,6 +1,6 @@
 # Weather zones. One OpenWeather call per zone every 15 minutes.
 # 5 zones x 96 slots/day = 480 calls/day.
-# Each segment is joined to its NEAREST zone in Dataform (silver.segment_zone, ST_DISTANCE),
+# Each segment is joined to its NEAREST zone in dbt (silver.segment_zone, PostGIS ST_Distance),
 # so segments do not list a zone here.
 
 zones:
