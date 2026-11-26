@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import jsonschema
@@ -51,7 +51,7 @@ WEATHER_QUEUE = "weather-events"
 
 def compute_slot(now: datetime | None = None) -> datetime:
     """Round a timestamp down to its 15-minute boundary (UTC)."""
-    now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    now = (now or datetime.now(UTC)).astimezone(UTC)
     return now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0)
 
 def format_slot(slot: datetime) -> str:
@@ -93,7 +93,7 @@ def fetch_traffic(segment: dict, slot: datetime, api_key: str) -> dict:
         "frc": flow.get("frc"),
         "source": "tomtom",
         "schema_version": SCHEMA_VERSION,
-        "collected_at": format_slot(datetime.now(timezone.utc)),
+        "collected_at": format_slot(datetime.now(UTC)),
     }
 
 
@@ -114,12 +114,12 @@ def fetch_weather(zone: dict, slot: datetime, api_key: str) -> dict:
         "temp_c": main.get("temp"),
         "humidity": main.get("humidity"),
         "wind_ms": data.get("wind", {}).get("speed"),
-        "rain_1h_mm": data.get("rain", {}).get("1h", 0),  # key is missing when it is not raining
+        "rain_1h_mm": data.get("rain", {}).get("1h", 0), 
         "visibility_m": data.get("visibility"),
         "condition_code": (data.get("weather") or [{}])[0].get("id"),
         "source": "openweather",
         "schema_version": SCHEMA_VERSION,
-        "collected_at": format_slot(datetime.now(timezone.utc)),
+        "collected_at": format_slot(datetime.now(UTC)),
     }
 
 def write_to_file(queue: str, events: list[dict]) -> None:
@@ -137,16 +137,18 @@ def send_to_service_bus(queue: str, events: list[dict]) -> None:
     from azure.servicebus import ServiceBusClient, ServiceBusMessage
 
     namespace = os.environ["SERVICEBUS_NAMESPACE"] 
-    with ServiceBusClient(namespace, DefaultAzureCredential()) as client:
-        with client.get_queue_sender(queue) as sender:
-            sender.send_messages(
-                [
-                    ServiceBusMessage(
-                        json.dumps(e), message_id=e["event_id"], content_type="application/json"
-                    )
-                    for e in events
-                ]
-            )
+    with (
+        ServiceBusClient(namespace, DefaultAzureCredential()) as client,
+        client.get_queue_sender(queue) as sender,
+    ):
+        sender.send_messages(
+            [
+                ServiceBusMessage(
+                    json.dumps(e), message_id=e["event_id"], content_type="application/json"
+                )
+                for e in events
+            ]
+        )
 
 
 def send(queue: str, events: list[dict], sink: str) -> None:
@@ -169,7 +171,10 @@ def collect(locations, fetch, schema, slot, api_key, label) -> list[dict]:
             events.append(event)
         except requests.RequestException as exc:
             status = getattr(getattr(exc, "response", None), "status_code", None)
-            log.error("%s %s: request failed (%s, status=%s)", label, loc["id"], type(exc).__name__, status)
+            log.error(
+                "%s %s: request failed (%s, status=%s)",
+                label, loc["id"], type(exc).__name__, status,
+            )
         except (KeyError, ValueError, jsonschema.ValidationError) as exc:
             log.error("%s %s: bad data (%s)", label, loc["id"], type(exc).__name__)
     return events
@@ -196,7 +201,10 @@ def main() -> int:
     send(TRAFFIC_QUEUE, traffic, sink)
     send(WEATHER_QUEUE, weather, sink)
 
-    log.info("Done: %d/%d traffic, %d/%d weather", len(traffic), len(segments), len(weather), len(zones))
+    log.info(
+        "Done: %d/%d traffic, %d/%d weather",
+        len(traffic), len(segments), len(weather), len(zones),
+    )
     return 0 if (traffic or weather) else 1
 
 

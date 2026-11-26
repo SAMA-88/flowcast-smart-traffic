@@ -2,7 +2,7 @@
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import jsonschema
@@ -13,7 +13,7 @@ from collector import main as m  # noqa: E402
 
 
 def utc(*args):
-    return datetime(*args, tzinfo=timezone.utc)
+    return datetime(*args, tzinfo=UTC)
 
 
 class FakeResponse:
@@ -68,9 +68,11 @@ def test_event_id_differs_by_location_and_slot():
 # ---------- events match the schemas ----------
 
 def test_traffic_event_matches_schema(monkeypatch):
-    payload = {"flowSegmentData": {"currentSpeed": 14, "freeFlowSpeed": 37, "currentTravelTime": 120,
-                                   "freeFlowTravelTime": 50, "confidence": 0.92,
-                                   "roadClosure": False, "frc": "FRC3"}}
+    payload = {"flowSegmentData": {
+        "currentSpeed": 14, "freeFlowSpeed": 37, "currentTravelTime": 120,
+        "freeFlowTravelTime": 50, "confidence": 0.92,
+        "roadClosure": False, "frc": "FRC3",
+    }}
     monkeypatch.setattr(m.requests, "get", lambda *a, **k: FakeResponse(payload))
     segment = {"id": "S06", "lat": 30.03, "lon": 31.47}
     event = m.fetch_traffic(segment, utc(2026, 11, 25, 14, 15), "fake-key")
