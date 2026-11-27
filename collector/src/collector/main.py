@@ -47,6 +47,8 @@ SCHEMA_VERSION = 1
 
 TRAFFIC_QUEUE = "traffic-events"
 WEATHER_QUEUE = "weather-events"
+SERVICEBUS_SUFFIX = ".servicebus.windows.net"
+
 
 
 def compute_slot(now: datetime | None = None) -> datetime:
@@ -129,6 +131,14 @@ def write_to_file(queue: str, events: list[dict]) -> None:
         for event in events:
             f.write(json.dumps(event) + "\n")
 
+def full_namespace(name: str) -> str:
+    """Return the fully qualified Service Bus namespace.
+
+    Accepts 'sb-flowcast' or 'sb-flowcast.servicebus.windows.net'.
+    """
+    name = name.strip()
+    return name if "." in name else name + SERVICEBUS_SUFFIX
+
 
 def send_to_service_bus(queue: str, events: list[dict]) -> None:
     """Send one message per event, with message_id = event_id."""
@@ -136,7 +146,7 @@ def send_to_service_bus(queue: str, events: list[dict]) -> None:
     from azure.identity import DefaultAzureCredential
     from azure.servicebus import ServiceBusClient, ServiceBusMessage
 
-    namespace = os.environ["SERVICEBUS_NAMESPACE"] 
+    namespace = full_namespace(os.environ["SERVICEBUS_NAMESPACE"])
     with (
         ServiceBusClient(namespace, DefaultAzureCredential()) as client,
         client.get_queue_sender(queue) as sender,
@@ -180,7 +190,10 @@ def collect(locations, fetch, schema, slot, api_key, label) -> list[dict]:
     return events
 
 def main() -> int:
-    sink = os.environ.get("SINK", "servicebus")
+    sink = os.environ.get("SINK", "servicebus").strip().lower()
+    if sink not in ("file", "servicebus"):
+        log.error("SINK must be 'file' or 'servicebus'")
+        return 1
     tomtom_key = os.environ.get("TOMTOM_API_KEY")
     weather_key = os.environ.get("OPENWEATHER_API_KEY")
     if not tomtom_key or not weather_key:
@@ -198,14 +211,17 @@ def main() -> int:
     weather = collect(zones, fetch_weather, load_schema("weather_event.schema.json"),
                       slot, weather_key, "zone")
 
-    send(TRAFFIC_QUEUE, traffic, sink)
-    send(WEATHER_QUEUE, weather, sink)
+    ok = True
+    for queue, events in ((TRAFFIC_QUEUE, traffic), (WEATHER_QUEUE, weather)):
+        try:
+            send(queue, events, sink)
+        except Exception as exc:
+            log.error("send to %s failed (%s)", queue, type(exc).__name__)
+            ok = False
 
-    log.info(
-        "Done: %d/%d traffic, %d/%d weather",
-        len(traffic), len(segments), len(weather), len(zones),
-    )
-    return 0 if (traffic or weather) else 1
+    log.info("Done: %d/%d traffic, %d/%d weather", 
+             len(traffic), len(segments), len(weather), len(zones))
+    return 0 if (ok and (traffic or weather)) else 1
 
 
 if __name__ == "__main__":

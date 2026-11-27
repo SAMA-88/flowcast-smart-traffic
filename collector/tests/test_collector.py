@@ -9,7 +9,7 @@ import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from collector import main as m  # noqa: E402
+from collector import main as m
 
 
 def utc(*args):
@@ -26,8 +26,6 @@ class FakeResponse:
     def json(self):
         return self._payload
 
-
-# ---------- slot and event_id ----------
 
 def test_slot_rounds_down():
     assert m.compute_slot(utc(2026, 11, 26, 10, 29, 59)) == utc(2026, 11, 26, 10, 15)
@@ -65,7 +63,6 @@ def test_event_id_differs_by_location_and_slot():
     assert m.make_event_id("S06", s1) != m.make_event_id("S06", s2)
 
 
-# ---------- events match the schemas ----------
 
 def test_traffic_event_matches_schema(monkeypatch):
     payload = {"flowSegmentData": {
@@ -95,7 +92,6 @@ def test_config_files_load():
     assert len(m.load_locations("zones.yml", "zones")) == 5
 
 
-# ---------- file sink ----------
 
 def test_file_sink_writes_json_lines(tmp_path, monkeypatch):
     monkeypatch.setattr(m, "OUT_DIR", tmp_path)
@@ -114,3 +110,56 @@ def test_failed_location_is_skipped(monkeypatch):
                        m.load_schema("traffic_event.schema.json"),
                        utc(2026, 11, 25, 14, 15), "fake-key", "segment")
     assert events == []
+
+
+def test_weather_is_still_sent_when_traffic_send_fails(monkeypatch):
+    sent = []
+
+    def fake_send(queue, events, sink):
+        if queue == m.TRAFFIC_QUEUE:
+            raise RuntimeError("boom")
+        sent.append(queue)
+
+    monkeypatch.setenv("TOMTOM_API_KEY", "fake")
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "fake")
+    monkeypatch.setenv("SINK", "file")
+    monkeypatch.setattr(m, "load_locations", lambda f, k: [{"id": "X1", "lat": 1, "lon": 1}])
+    monkeypatch.setattr(m, "collect", lambda *a, **k: [{"event_id": "X1_e"}])
+    monkeypatch.setattr(m, "load_schema", lambda name: {})
+    monkeypatch.setattr(m, "send", fake_send)
+
+    assert m.main() == 1               
+    assert sent == [m.WEATHER_QUEUE]     
+
+def test_full_namespace_appends_suffix_when_missing():
+    assert m.full_namespace("sb-flowcast") == "sb-flowcast.servicebus.windows.net"
+
+
+def test_full_namespace_keeps_full_hostname():
+    full = "sb-flowcast.servicebus.windows.net"
+    assert m.full_namespace(full) == full
+    assert m.full_namespace(f"  {full}  ") == full
+
+def test_invalid_sink_is_rejected(monkeypatch):
+    monkeypatch.setenv("TOMTOM_API_KEY", "fake")
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "fake")
+    monkeypatch.setenv("SINK", "fil")
+    called = []
+    monkeypatch.setattr(m, "collect", lambda *a, **k: called.append(1) or [])
+
+    assert m.main() == 1
+    assert called == [] 
+
+
+def test_sink_value_is_case_insensitive(monkeypatch):
+    monkeypatch.setenv("TOMTOM_API_KEY", "fake")
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "fake")
+    monkeypatch.setenv("SINK", "File")
+    sent = []
+    monkeypatch.setattr(m, "load_locations", lambda f, k: [{"id": "X1", "lat": 1, "lon": 1}])
+    monkeypatch.setattr(m, "load_schema", lambda name: {})
+    monkeypatch.setattr(m, "collect", lambda *a, **k: [{"event_id": "X1_e"}])
+    monkeypatch.setattr(m, "send", lambda queue, events, sink: sent.append(sink))
+
+    assert m.main() == 0
+    assert sent == ["file", "file"] 
